@@ -6,8 +6,6 @@ from model.dice import Dice
 
 if __name__ == '__main__':
 
-    argv = sys.argv
-
     # true parameters
     A = np.array([[0.1, 0.7, 0.2], [0.2, 0.1, 0.7], [0.7, 0.2, 0.1]])
     B = np.array([[0.9, 0.1], [0.6, 0.4], [0.1, 0.9]])
