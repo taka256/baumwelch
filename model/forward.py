@@ -20,7 +20,7 @@ class Forward(object):
         self.__scaled_initialize(x)
         for (i, x_t) in enumerate(x[1:]):
             self.alpha[i+1, :] = self.__scaled_forward(x_t, i)
-        return 1.0 / self.C[:].prod()
+        return 1.0 / self.C.prod()
 
 
     def __initialize(self, x):
