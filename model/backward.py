@@ -11,15 +11,13 @@ class Backward(object):
 
     def evaluate(self, x):
         self.__initialize(x)
-        for (i, x_t) in list(enumerate(x[1:]))[::-1]:
-            self.beta[i, :] = self.__backward(x_t, i + 1)
+        self.__backward_seq(x, self.__backward)
         return (self.rho * self.B[:, x[0]] * self.beta[0, :]).sum()
 
 
     def scaled_evaluate(self, x, C):
         self.__scaled_initialize(x, C)
-        for (i, x_t) in list(enumerate(x[1:]))[::-1]:
-            self.beta[i, :] = self.__scaled_backward(x_t, i + 1)
+        self.__backward_seq(x, self.__scaled_backward)
         return self.C.prod()
 
 
@@ -32,6 +30,11 @@ class Backward(object):
         self.__initialize(x)
         self.C = C
         self.beta[-1, :] /= self.C[-1]
+
+
+    def __backward_seq(self, x, backward_func):
+        for (i, x_t) in list(enumerate(x[1:]))[::-1]:
+            self.beta[i, :] = backward_func(x_t, i + 1)
 
 
     def __backward(self, x_t, i):

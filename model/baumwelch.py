@@ -15,34 +15,19 @@ class BaumWelch(object):
     def estimate(self, x, T):
         self.__init_storage(T)
         for t in range(T):
-            # init instances of foward and backward
             fw, bw = Forward(self.A, self.B, self.rho), Backward(self.A, self.B, self.rho)
-
-            # evaluate
             P, _ = fw.evaluate(x), bw.evaluate(x)
-
-            # update parameters
             self.__update(fw.alpha, bw.beta, x)
-
-            # store parameters
             self.__store(np.log(P), t)
 
 
     def scaled_estimate(self, x, T):
         self.__init_storage(T)
         for t in range(T):
-            # init instances of foward and backward
             fw, bw = Forward(self.A, self.B, self.rho), Backward(self.A, self.B, self.rho)
-
-            # evaluate
             P, _ = fw.scaled_evaluate(x), bw.scaled_evaluate(x, fw.C)
-
-            # update parameters
             self.__scaled_update(fw.alpha, bw.beta, fw.C, x)
-
-            # store parameters
             self.__store(np.log(fw.C).sum(), t)
-
 
 
     def graph_A(self, A):

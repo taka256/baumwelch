@@ -11,15 +11,13 @@ class Forward(object):
 
     def evaluate(self, x):
         self.__initialize(x)
-        for (i, x_t) in enumerate(x[1:]):
-            self.alpha[i+1, :] = self.__forward(x_t, i)
+        self.__forward_seq(x, self.__forward)
         return self.alpha[-1, :].sum()
 
 
     def scaled_evaluate(self, x):
         self.__scaled_initialize(x)
-        for (i, x_t) in enumerate(x[1:]):
-            self.alpha[i+1, :] = self.__scaled_forward(x_t, i)
+        self.__forward_seq(x, self.__scaled_forward)
         return self.C.prod()
 
 
@@ -33,6 +31,11 @@ class Forward(object):
         self.C = np.zeros(x.size)
         self.C[0] = self.alpha[0, :].sum()
         self.alpha[0, :] /= self.C[0]
+
+
+    def __forward_seq(self, x, forward_func):
+        for (i, x_t) in enumerate(x[1:]):
+            self.alpha[i+1, :] = forward_func(x_t, i)
 
 
     def __forward(self, x_t, i):
