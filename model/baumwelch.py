@@ -47,19 +47,24 @@ class BaumWelch(object):
 
     def __update(self, alpha, beta, x):
         denom = alpha[-1, :].sum().reshape(-1, 1)
-        _a = (np.tile(alpha[:-1, :], (self.c, 1, 1)).swapaxes(0, 1) * self.A.T).transpose(2, 0, 1)
-        _b = self.B[:, x[1:]].T * beta[1:, :]
+        numer = self.__numer(alpha, beta, x)
         gamma = alpha * beta / denom
-        xi = _a * _b / denom
+        xi = numer / denom
         self.__update_param(gamma, xi, x)
 
 
     def __scaled_update(self, alpha, beta, C, x):
+        denom = np.tile(C[1:], (3, 1)).T
+        numer = self.__numer(alpha, beta, x)
+        gamma = alpha * beta
+        xi = numer / denom
+        self.__update_param(gamma, xi, x)
+
+
+    def __numer(self, alpha, beta, x):
         _a = (np.tile(alpha[:-1, :], (self.c, 1, 1)).swapaxes(0, 1) * self.A.T).transpose(2, 0, 1)
         _b = self.B[:, x[1:]].T * beta[1:, :]
-        gamma = alpha * beta
-        xi = _a * _b / np.tile(C[1:], (3, 1)).T
-        self.__update_param(gamma, xi, x)
+        return _a * _b
 
 
     def __update_param(self, gamma, xi, x):
