@@ -8,12 +8,36 @@ class Backward(object):
         self.rho = rho
         self.c = A.shape[0]
 
+
     def evaluate(self, x):
-        self.beta = np.zeros((x.size, self.c))
-        self.beta[-1, :] = np.ones(self.c)
+        self.__initialize(x)
         for (i, x_t) in list(enumerate(x[1:]))[::-1]:
             self.beta[i, :] = self.__backward(x_t, i + 1)
         return (self.rho * self.B[:, x[0]] * self.beta[0, :]).sum()
 
+
+    def scaled_evaluate(self, x, C):
+        self.__scaled_initialize(x, C)
+        for (i, x_t) in list(enumerate(x[1:]))[::-1]:
+            self.beta[i, :] = self.__scaled_backward(x_t, i + 1)
+        return self.C.prod()
+
+
+    def __initialize(self, x):
+        self.beta = np.zeros((x.size, self.c))
+        self.beta[-1, :] = np.ones(self.c)
+
+
+    def __scaled_initialize(self, x, C):
+        self.__initialize(x)
+        self.C = C
+        self.beta[-1, :] /= self.C[-1]
+
+
     def __backward(self, x_t, i):
         return (self.A * self.B[:, x_t] * self.beta[i, :]).sum(axis = 1)
+
+
+    def __scaled_backward(self, x_t, i):
+        _beta = self.__backward(x_t, i)
+        return _beta / self.C[i]

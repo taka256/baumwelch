@@ -18,11 +18,11 @@ if __name__ == '__main__':
 
     # generate spots of dice
     dice = Dice(A, B, rho)
-    s, x = dice.generate_spots(n = 1000)
+    s, x = dice.generate_spots(n = 10000)
 
     # estimate parameters
     baum = BaumWelch(A_e, B_e, rho_e)
-    baum.estimate(x, T = 200)
+    baum.scaled_estimate(x, T = 200)
 
     # save graph of parameters
     baum.graph_A(A)

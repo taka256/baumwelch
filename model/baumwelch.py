@@ -10,7 +10,7 @@ class BaumWelch(object):
         self.B = B
         self.rho = rho
         self.c, self.m = B.shape
-        
+
 
     def estimate(self, x, T):
         self.__init_storage(T)
@@ -22,10 +22,27 @@ class BaumWelch(object):
             P, _ = fw.evaluate(x), bw.evaluate(x)
 
             # update parameters
-            self.__update(fw, bw, x)
+            self.__update(fw.alpha, bw.beta, x)
 
             # store parameters
-            self.__store(P, t)
+            self.__store(np.log(P), t)
+
+
+    def scaled_estimate(self, x, T):
+        self.__init_storage(T)
+        for t in range(T):
+            # init instances of foward and backward
+            fw, bw = Forward(self.A, self.B, self.rho), Backward(self.A, self.B, self.rho)
+
+            # evaluate
+            P, _ = fw.scaled_evaluate(x), bw.scaled_evaluate(x, fw.C)
+
+            # update parameters
+            self.__scaled_update(fw.alpha, bw.beta, fw.C, x)
+
+            # store parameters
+            self.__store(np.log(fw.C).sum(), t)
+
 
 
     def graph_A(self, A):
@@ -37,30 +54,45 @@ class BaumWelch(object):
 
 
     def graph_P(self):
-        seq = np.arange(self.__P.size)
-        plt.plot(seq, self.__P)
+        seq = np.arange(self.__logP.size)
+        plt.plot(seq, self.__logP)
         plt.savefig('logP.png')
         plt.clf()
 
 
-    def __update(self, fw, bw, x):
-        mul = fw.alpha * bw.beta
-        mul_sum = mul.sum(axis = 0, keepdims = True).T
-        self.A = ((np.tile(fw.alpha[:-1, :], (self.c, 1, 1)).swapaxes(0, 1) * self.A.T).transpose(2, 0, 1) * self.B[:, x[1:]].T * bw.beta[1:, :]).sum(axis = 1) / (mul_sum - mul[-1, :].reshape(-1, 1))
-        self.B = np.tensordot(mul, [(x == k) for k in range(self.m)], axes = (0, 1)) / mul_sum
-        self.rho = mul[0, :] / fw.alpha[-1, :].sum()
+    def __update(self, alpha, beta, x):
+        denom = alpha[-1, :].sum().reshape(-1, 1)
+        _a = (np.tile(alpha[:-1, :], (self.c, 1, 1)).swapaxes(0, 1) * self.A.T).transpose(2, 0, 1)
+        _b = self.B[:, x[1:]].T * beta[1:, :]
+        gamma = alpha * beta / denom
+        xi = _a * _b / denom
+        self.__update_param(gamma, xi, x)
+
+
+    def __scaled_update(self, alpha, beta, C, x):
+        _a = (np.tile(alpha[:-1, :], (self.c, 1, 1)).swapaxes(0, 1) * self.A.T).transpose(2, 0, 1)
+        _b = self.B[:, x[1:]].T * beta[1:, :]
+        gamma = alpha * beta
+        xi = _a * _b / np.tile(C[1:], (3, 1)).T
+        self.__update_param(gamma, xi, x)
+
+
+    def __update_param(self, gamma, xi, x):
+        self.A = xi.sum(axis = 1) / gamma[:-1, :].sum(axis = 0).reshape(-1, 1)
+        self.B = np.tensordot(gamma, [(x == k) for k in range(self.m)], axes = (0, 1)) / gamma.sum(axis = 0).reshape(-1, 1)
+        self.rho = gamma[0, :]
 
 
     def __init_storage(self, T):
-        self.__P = np.zeros(T)
+        self.__logP = np.zeros(T)
         self.__A = np.zeros((T + 1, self.c, self.c))
         self.__B = np.zeros((T + 1, self.c, self.m))
         self.__A[0, :, :] = self.A
         self.__B[0, :, :] = self.B
 
 
-    def __store(self, P, t):
-        self.__P[t] = np.log(P)
+    def __store(self, logP, t):
+        self.__logP[t] = logP
         self.__A[t+1, :, :] = self.A
         self.__B[t+1, :, :] = self.B
 
