@@ -1,6 +1,5 @@
 import numpy as np
 from matplotlib import pyplot as plt
-import sys
 from model.baumwelch import  BaumWelch
 from model.dice import Dice
 
