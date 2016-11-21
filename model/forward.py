@@ -20,7 +20,7 @@ class Forward(object):
         self.__scaled_initialize(x)
         for (i, x_t) in enumerate(x[1:]):
             self.alpha[i+1, :] = self.__scaled_forward(x_t, i)
-        return 1.0 / self.C.prod()
+        return self.C.prod()
 
 
     def __initialize(self, x):
@@ -31,8 +31,8 @@ class Forward(object):
     def __scaled_initialize(self, x):
         self.__initialize(x)
         self.C = np.zeros(x.size)
-        self.C[0] = 1.0 / self.alpha[0, :].sum()
-        self.alpha[0, :] *= self.C[0]
+        self.C[0] = self.alpha[0, :].sum()
+        self.alpha[0, :] /= self.C[0]
 
 
     def __forward(self, x_t, i):
@@ -41,5 +41,5 @@ class Forward(object):
 
     def __scaled_forward(self, x_t, i):
         _alpha = self.__forward(x_t, i)
-        self.C[i + 1] = 1.0 / _alpha.sum()
-        return _alpha * self.C[i + 1]
+        self.C[i + 1] = _alpha.sum()
+        return _alpha / self.C[i + 1]
